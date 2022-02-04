@@ -6,30 +6,41 @@ RED = "#e7305b"
 GREEN = "#9bdeac"
 YELLOW = "#f7f5dd"
 FONT_NAME = "Courier"
-WORK_MIN = 25
-SHORT_BREAK_MIN = 5
-LONG_BREAK_MIN = 20
-reps = 1
+WORK_MIN = 0.1
+SHORT_BREAK_MIN = 0.1
+LONG_BREAK_MIN = 0.1
+reps = 0
+timer = None
 
 # ---------------------------- TIMER RESET ------------------------------- #
+def reset_timer():
+	global reps
+	window.after_cancel(timer)
+	canvas.itemconfig(timer_text, text="00:00")
+	header.config(text="Timer")
+	check_label.config(text="")
+	reps = 0
+
 
 # ---------------------------- TIMER MECHANISM ------------------------------- #
 def start_timer():
 	global reps
+	reps += 1
 	if reps % 2 != 0:
 		count_down(WORK_MIN * 60)
+		header.config(text="WORK", fg=GREEN)
 	elif reps < 8:
 		count_down(SHORT_BREAK_MIN * 60)
+		header.config(text="SHORT BRK", fg=PINK)
 	else:
 		count_down(LONG_BREAK_MIN * 60)
-
-	reps += 1
-
+		header.config(text="LONG BRK", fg=RED)
 
 
 
 # ---------------------------- COUNTDOWN MECHANISM ------------------------------- #
 def count_down(count):
+	global timer
 	count_min = math.floor(count / 60)
 	count_sec = count % 60
 
@@ -37,9 +48,22 @@ def count_down(count):
 	if count_sec < 10:
 		count_sec = f"0{count_sec}"
 
-	if count >= 0:
+	if count > 0:
 		canvas.itemconfig(timer_text, text=f"{count_min}:{count_sec}")
-		window.after(1000, count_down, count - 1)
+		timer = window.after(1000, count_down, count - 1)
+	else:
+		if reps <= 8:
+			start_timer()
+			marks = ""
+			for _ in range(math.floor(reps/2)):
+				marks += "✓"
+
+			check_label.config(text=marks)
+		else:
+			reset_timer()
+
+
+
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -60,10 +84,11 @@ header.grid(column=1, row=1)
 start_btn = Button(text="Start", highlightthickness=0, command=start_timer)
 start_btn.grid(column=0, row=3)
 
-reset_btn = Button(text="Reset", highlightthickness=0)
+reset_btn = Button(text="Reset", highlightthickness=0, command=reset_timer)
 reset_btn.grid(column=2, row=3)
 
-check_label = Label(text="✓",highlightthickness=0, bg=YELLOW, fg=GREEN)
+check_label = Label(text="",highlightthickness=0, bg=YELLOW, fg=GREEN)
 check_label.grid(column=1, row=3)
+
 
 window.mainloop()
